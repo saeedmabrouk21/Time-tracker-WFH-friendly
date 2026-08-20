@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stopwatch</title>
+    <title>Countdown Timer · WFH</title>
     <style>
         /* ----- Reset & Base ----- */
         * {
@@ -30,7 +29,7 @@
 
         .app {
             width: 100%;
-            max-width: 720px;
+            max-width: 760px;
             background: rgba(255, 255, 255, 0.04);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
@@ -46,7 +45,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2.2rem;
+            margin-bottom: 2rem;
             padding-bottom: 1rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
@@ -130,12 +129,12 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 1.2rem 0 0.8rem;
+            padding: 0.8rem 0 0.2rem;
         }
 
         .timer {
             font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
-            font-size: clamp(3rem, 15vw, 5.8rem);
+            font-size: clamp(3.2rem, 15vw, 6rem);
             font-weight: 300;
             letter-spacing: 0.04em;
             color: #fff;
@@ -175,13 +174,13 @@
             text-align: right;
         }
 
-        /* ----- Status Indicator ----- */
+        /* ----- Status & Info ----- */
         .status-row {
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 0.6rem;
-            margin-top: 0.8rem;
+            margin-top: 0.1rem;
             font-size: 0.85rem;
             color: rgba(255, 255, 255, 0.35);
             letter-spacing: 0.02em;
@@ -201,6 +200,11 @@
             animation: none;
         }
 
+        .status-dot.finished {
+            background: #f87171;
+            animation: none;
+        }
+
         @keyframes pulse-dot {
             0%,
             100% {
@@ -213,19 +217,110 @@
             }
         }
 
+        /* ----- Info Grid (Current Time, Target, Finish) ----- */
+        .info-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 0.8rem 1.5rem;
+            margin-top: 1rem;
+            padding: 0.7rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.9rem;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .info-item .label {
+            font-weight: 400;
+            opacity: 0.7;
+        }
+
+        .info-item .value {
+            font-weight: 500;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .info-item .value.completed {
+            color: #4ade80;
+        }
+
+        .info-item .value.finished {
+            color: #f87171;
+            font-weight: 600;
+        }
+
+        .target-input {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.6rem;
+            color: #fff;
+            padding: 0.25rem 0.4rem;
+            width: 3.8rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .target-input:focus {
+            border-color: #7c7cf8;
+        }
+
+        .target-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+
+        .target-input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        .set-btn {
+            background: rgba(96, 165, 250, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(96, 165, 250, 0.15);
+            padding: 0.3rem 0.9rem;
+            border-radius: 1.2rem;
+            font-weight: 500;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .set-btn:hover {
+            background: rgba(96, 165, 250, 0.25);
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.10);
+            transform: scale(1.02);
+        }
+
+        .set-btn:active {
+            transform: scale(0.95);
+        }
+
         /* ----- Controls Grid (Page 2) ----- */
         .controls-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 0.9rem;
-            margin-top: 1.8rem;
+            margin-top: 1.5rem;
         }
 
         .ctrl-btn {
-            padding: 1rem 0.5rem;
+            padding: 0.9rem 0.3rem;
             border: none;
             border-radius: 1.4rem;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -235,9 +330,10 @@
             backdrop-filter: blur(4px);
             border: 1px solid rgba(255, 255, 255, 0.04);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
+            gap: 0.1rem;
             font-family: inherit;
         }
 
@@ -252,7 +348,12 @@
 
         .ctrl-btn .icon {
             font-size: 1.2rem;
-            line-height: 1;
+            line-height: 1.2;
+        }
+
+        .ctrl-btn .label {
+            font-size: 0.7rem;
+            opacity: 0.7;
         }
 
         .ctrl-btn.pause {
@@ -305,7 +406,7 @@
         /* ----- View hint ----- */
         .view-hint {
             text-align: center;
-            margin-top: 1.6rem;
+            margin-top: 1.2rem;
             font-size: 0.8rem;
             color: rgba(255, 255, 255, 0.2);
             letter-spacing: 0.04em;
@@ -325,7 +426,7 @@
         }
 
         /* ----- Responsive ----- */
-        @media (max-width: 500px) {
+        @media (max-width: 600px) {
             .app {
                 padding: 1.2rem 1.2rem 1.6rem;
                 border-radius: 2rem;
@@ -362,19 +463,39 @@
             }
 
             .ctrl-btn {
-                padding: 0.8rem 0.3rem;
+                padding: 0.7rem 0.3rem;
                 font-size: 0.85rem;
+                flex-direction: row;
+            }
+
+            .ctrl-btn .label {
+                font-size: 0.8rem;
+            }
+
+            .info-grid {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.6rem;
+                padding: 0.8rem;
+            }
+
+            .info-item {
+                justify-content: space-between;
+            }
+
+            .target-input {
+                width: 3.5rem;
             }
         }
 
-        @media (max-width: 380px) {
+        @media (max-width: 400px) {
             .controls-grid {
                 grid-template-columns: 1fr 1fr;
                 gap: 0.5rem;
             }
             .ctrl-btn {
                 font-size: 0.75rem;
-                padding: 0.6rem 0.2rem;
+                padding: 0.5rem 0.2rem;
                 border-radius: 1rem;
             }
             .ctrl-btn .icon {
@@ -393,7 +514,7 @@
                     <circle cx="12" cy="12" r="10" />
                     <polyline points="12 6 12 12 16 14" />
                 </svg>
-                <span>Stopwatch</span>
+                <span>Countdown</span>
             </div>
             <div class="nav-links">
                 <a class="nav-link active" data-page="view" href="#view">👁 View</a>
@@ -415,10 +536,27 @@
             </div>
             <div class="status-row">
                 <span class="status-dot" id="statusDot"></span>
-                <span id="statusLabel">Running</span>
+                <span id="statusLabel">Ready</span>
             </div>
+
+            <!-- Info Grid: Current Time, Remaining Target, Finish Time -->
+            <div class="info-grid" id="infoGridView">
+                <div class="info-item">
+                    <span class="label">🕒 Egypt</span>
+                    <span class="value" id="currentTimeView">--:--:--</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">⏳ Remaining</span>
+                    <span class="value" id="remainingView">00:00:00</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">🏁 Finish at</span>
+                    <span class="value" id="completionView">--:--</span>
+                </div>
+            </div>
+
             <div class="view-hint">
-                <span>⏱ View-only mode · switch to <a href="#control">Controls</a> to interact</span>
+                <span>👁 View-only · switch to <a href="#control">Controls</a> to set &amp; run</span>
             </div>
         </section>
 
@@ -436,21 +574,46 @@
             </div>
             <div class="status-row">
                 <span class="status-dot" id="statusDotCtrl"></span>
-                <span id="statusLabelCtrl">Running</span>
+                <span id="statusLabelCtrl">Ready</span>
             </div>
 
+            <!-- Info Grid: Set Target, Current Time, Finish Time -->
+            <div class="info-grid" id="infoGridCtrl">
+                <div class="info-item">
+                    <span class="label">🕒 Egypt</span>
+                    <span class="value" id="currentTimeCtrl">--:--:--</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">🎯 Set countdown</span>
+                    <input type="number" class="target-input" id="setHours" value="0" min="0" max="99" placeholder="H" />
+                    <span style="color:rgba(255,255,255,0.4);">h</span>
+                    <input type="number" class="target-input" id="setMinutes" value="5" min="0" max="59" placeholder="M" />
+                    <span style="color:rgba(255,255,255,0.4);">m</span>
+                    <button class="set-btn" id="btnSetTarget">Set</button>
+                </div>
+                <div class="info-item">
+                    <span class="label">🏁 Finish at</span>
+                    <span class="value" id="completionCtrl">--:--</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
             <div class="controls-grid">
-                <button class="ctrl-btn pause" id="btnPause">
-                    <span class="icon">⏸</span> Pause
+                <button class="ctrl-btn pause" id="btnPause" disabled>
+                    <span class="icon">⏸</span>
+                    <span class="label">Pause</span>
                 </button>
                 <button class="ctrl-btn continue-btn" id="btnContinue" disabled>
-                    <span class="icon">▶</span> Continue
+                    <span class="icon">▶</span>
+                    <span class="label">Continue</span>
                 </button>
                 <button class="ctrl-btn reset" id="btnReset">
-                    <span class="icon">⟳</span> Reset
+                    <span class="icon">⟳</span>
+                    <span class="label">Reset</span>
                 </button>
                 <button class="ctrl-btn add-hours" id="btnAddHours">
-                    <span class="icon">⏰</span> +8 Hours
+                    <span class="icon">⏰</span>
+                    <span class="label">+8 Hours</span>
                 </button>
             </div>
         </section>
@@ -458,16 +621,17 @@
 
     <script>
         // ============================================================
-        //  STOPWATCH ENGINE
+        //  COUNTDOWN ENGINE
         // ============================================================
 
         class Stopwatch {
             constructor() {
-                this.elapsed = 0; // ms
+                // State
+                this.remaining = 0; // ms
+                this.initialRemaining = 0; // ms
                 this.running = false;
                 this.intervalId = null;
-                this.startTimestamp = 0;
-                this.pausedElapsed = 0;
+                this.startTime = 0;
 
                 // DOM refs – view page
                 this.hEl = document.getElementById('h');
@@ -490,90 +654,155 @@
                 this.btnContinue = document.getElementById('btnContinue');
                 this.btnReset = document.getElementById('btnReset');
                 this.btnAddHours = document.getElementById('btnAddHours');
+                this.btnSetTarget = document.getElementById('btnSetTarget');
 
-                // Bind UI updates
+                // Inputs
+                this.setHours = document.getElementById('setHours');
+                this.setMinutes = document.getElementById('setMinutes');
+
+                // Info displays
+                this.currentTimeView = document.getElementById('currentTimeView');
+                this.currentTimeCtrl = document.getElementById('currentTimeCtrl');
+                this.remainingView = document.getElementById('remainingView');
+                this.completionView = document.getElementById('completionView');
+                this.completionCtrl = document.getElementById('completionCtrl');
+
+                // Bind methods
                 this.updateDisplay = this.updateDisplay.bind(this);
                 this.tick = this.tick.bind(this);
+                this.updateTimeAndCompletion = this.updateTimeAndCompletion.bind(this);
 
-                // Start running by default
-                this.start();
+                // Set default target (5 minutes)
+                this.setTarget(0, 5);
 
                 // Attach events
                 this.btnPause.addEventListener('click', () => this.pause());
                 this.btnContinue.addEventListener('click', () => this.start());
                 this.btnReset.addEventListener('click', () => this.reset());
                 this.btnAddHours.addEventListener('click', () => this.addHours(8));
+                this.btnSetTarget.addEventListener('click', () => {
+                    const hrs = parseInt(this.setHours.value) || 0;
+                    const mins = parseInt(this.setMinutes.value) || 0;
+                    this.setTarget(hrs, mins);
+                });
 
-                // Routing (Hash-based)
+                // Routing
                 this.setupRouting();
+
+                // Start the clock update every second
+                setInterval(this.updateTimeAndCompletion, 1000);
+                this.updateTimeAndCompletion();
+                this.updateUIState();
             }
 
             // ----- Core -----
+            setTarget(hours, minutes) {
+                const totalMs = (hours * 3600 + minutes * 60) * 1000;
+                this.initialRemaining = totalMs;
+                this.remaining = totalMs;
+                this.pause(); // Stop if running
+                this.updateDisplay();
+                this.updateTimeAndCompletion();
+                this.updateUIState();
+                // Update the inputs to reflect the set value
+                this.setHours.value = hours;
+                this.setMinutes.value = minutes;
+            }
+
             start() {
+                if (this.remaining <= 0) {
+                    // If time is up, reset to initialRemaining before starting?
+                    // Better to let the user press Reset first, or just beep.
+                    return;
+                }
                 if (this.running) return;
                 this.running = true;
-                this.startTimestamp = performance.now() - this.elapsed;
+                this.startTime = performance.now();
+                this.initialRemaining = this.remaining; // Lock in the current remaining time
                 this.intervalId = setInterval(this.tick, 20);
                 this.updateUIState();
-                this.btnContinue.disabled = true;
-                this.btnPause.disabled = false;
             }
 
             pause() {
-                if (!this.running) return;
-                this.running = false;
-                clearInterval(this.intervalId);
-                this.intervalId = null;
-                this.elapsed = performance.now() - this.startTimestamp;
-                this.updateUIState();
-                this.btnContinue.disabled = false;
-                this.btnPause.disabled = true;
+                if (this.running) {
+                    this.running = false;
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                    // Calculate exact remaining time
+                    const elapsed = performance.now() - this.startTime;
+                    this.remaining = Math.max(0, this.initialRemaining - elapsed);
+                    this.updateDisplay();
+                    this.updateTimeAndCompletion();
+                    this.updateUIState();
+                } else {
+                    // If already paused, just ensure UI is correct
+                    if (this.intervalId) {
+                        clearInterval(this.intervalId);
+                        this.intervalId = null;
+                    }
+                    this.updateUIState();
+                }
             }
 
             reset() {
-                const wasRunning = this.running;
-                if (wasRunning) {
-                    clearInterval(this.intervalId);
-                    this.intervalId = null;
-                    this.running = false;
-                }
-                this.elapsed = 0;
-                this.startTimestamp = performance.now();
+                this.pause();
+                this.remaining = this.initialRemaining;
                 this.updateDisplay();
+                this.updateTimeAndCompletion();
                 this.updateUIState();
-                this.btnContinue.disabled = false;
-                this.btnPause.disabled = true;
-                if (wasRunning) {
-                    this.start();
-                }
             }
 
             addHours(hours) {
-                const ms = hours * 60 * 60 * 1000;
-                this.elapsed += ms;
+                const ms = hours * 3600000;
+                this.remaining += ms;
+                this.initialRemaining += ms;
                 if (this.running) {
-                    this.startTimestamp = performance.now() - this.elapsed;
+                    this.startTime = performance.now();
+                    this.initialRemaining = this.remaining;
                 }
                 this.updateDisplay();
+                this.updateTimeAndCompletion();
+                // Visual feedback
                 this.btnAddHours.style.transform = 'scale(0.94)';
                 setTimeout(() => { this.btnAddHours.style.transform = ''; }, 150);
             }
 
             tick() {
-                this.elapsed = performance.now() - this.startTimestamp;
+                const elapsed = performance.now() - this.startTime;
+                let remaining = this.initialRemaining - elapsed;
+                if (remaining <= 0) {
+                    remaining = 0;
+                    this.remaining = 0;
+                    this.pause(); // Stop the timer
+                    this.flashComplete();
+                } else {
+                    this.remaining = remaining;
+                }
                 this.updateDisplay();
+                this.updateTimeAndCompletion();
+            }
+
+            flashComplete() {
+                // Visual & text notification
+                this.labelEl.textContent = '🎉 Time\'s up!';
+                this.labelCtrl.textContent = '🎉 Time\'s up!';
+                this.dotEl.className = 'status-dot finished';
+                this.dotCtrl.className = 'status-dot finished';
+                this.btnPause.disabled = true;
+                this.btnContinue.disabled = true;
+                // Re-enable continue? No, they need to reset or set a new target.
+                // We'll let reset handle it.
             }
 
             // ----- Display -----
             updateDisplay() {
-                const total = Math.max(0, this.elapsed);
+                const total = Math.max(0, this.remaining);
                 const hrs = Math.floor(total / 3600000);
                 const mins = Math.floor((total % 3600000) / 60000);
                 const secs = Math.floor((total % 60000) / 1000);
                 const millis = Math.floor((total % 1000) / 10);
 
                 const pad = (n, d = 2) => String(n).padStart(d, '0');
-
                 const hStr = pad(hrs);
                 const mStr = pad(mins);
                 const sStr = pad(secs);
@@ -584,6 +813,7 @@
                 this.mEl.textContent = mStr;
                 this.sEl.textContent = sStr;
                 this.msEl.textContent = '.' + msStr;
+                this.remainingView.textContent = `${hStr}:${mStr}:${sStr}`;
 
                 // Controls page
                 this.hCtrl.textContent = hStr;
@@ -594,62 +824,113 @@
 
             updateUIState() {
                 const isRunning = this.running;
-                const statusText = isRunning ? 'Running' : 'Paused';
+                const isFinished = this.remaining === 0 && this.initialRemaining > 0;
+                const isReady = this.remaining > 0 && !isRunning;
 
+                let statusText = 'Ready';
+                let dotClass = 'status-dot';
+
+                if (isRunning) {
+                    statusText = 'Running';
+                    dotClass += ' running';
+                } else if (isFinished) {
+                    statusText = '🎉 Time\'s up!';
+                    dotClass += ' finished';
+                } else if (isReady) {
+                    statusText = 'Paused';
+                    dotClass += ' paused';
+                } else {
+                    // No target set (remaining = 0, initialRemaining = 0)
+                    statusText = 'Set a target';
+                    dotClass += ' paused';
+                }
+
+                // View
                 this.labelEl.textContent = statusText;
-                this.dotEl.classList.toggle('paused', !isRunning);
-                this.labelCtrl.textContent = statusText;
-                this.dotCtrl.classList.toggle('paused', !isRunning);
+                this.dotEl.className = dotClass;
 
+                // Controls
+                this.labelCtrl.textContent = statusText;
+                this.dotCtrl.className = dotClass;
+
+                // Buttons
                 this.btnPause.disabled = !isRunning;
-                this.btnContinue.disabled = isRunning;
+                this.btnContinue.disabled = isRunning || isFinished || this.remaining <= 0;
+                // Reset is always enabled
+                // Add 8 hours is always enabled
             }
 
-            // ----- Routing (Hash-based for GitHub Pages) -----
+            // ----- Time & Completion (UTC+3) -----
+            updateTimeAndCompletion() {
+                const now = new Date();
+                const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
+                const timeStr = egyptTime.toTimeString().slice(0, 8);
+
+                this.currentTimeView.textContent = timeStr;
+                this.currentTimeCtrl.textContent = timeStr;
+
+                const remaining = this.remaining;
+
+                if (remaining <= 0 && this.initialRemaining > 0) {
+                    const msg = '🎉 Time\'s up!';
+                    this.completionView.textContent = msg;
+                    this.completionView.className = 'value finished';
+                    this.completionCtrl.textContent = msg;
+                    this.completionCtrl.className = 'value finished';
+                    return;
+                }
+
+                if (remaining <= 0) {
+                    const msg = 'Set a target';
+                    this.completionView.textContent = msg;
+                    this.completionView.className = 'value';
+                    this.completionCtrl.textContent = msg;
+                    this.completionCtrl.className = 'value';
+                    return;
+                }
+
+                const finishDate = new Date(egyptTime.getTime() + remaining);
+                const finishStr = finishDate.toTimeString().slice(0, 8);
+                this.completionView.textContent = finishStr;
+                this.completionView.className = 'value';
+                this.completionCtrl.textContent = finishStr;
+                this.completionCtrl.className = 'value';
+            }
+
+            // ----- Routing (Hash-based) -----
             setupRouting() {
                 const viewPage = document.getElementById('page-view');
                 const controlsPage = document.getElementById('page-controls');
                 const navLinks = document.querySelectorAll('.nav-link');
 
                 const navigate = (hash) => {
-                    // Remove the '#' and default to 'view'
                     const page = hash.replace('#', '') || 'view';
                     const isView = page === 'view';
-
-                    // Toggle pages
                     viewPage.classList.toggle('active', isView);
                     controlsPage.classList.toggle('active', !isView);
-
-                    // Update nav links
                     navLinks.forEach(link => {
                         const linkPage = link.dataset.page;
                         link.classList.toggle('active', linkPage === page);
                     });
                 };
 
-                // Click handlers for nav links
                 navLinks.forEach(link => {
                     link.addEventListener('click', (e) => {
                         e.preventDefault();
-                        const href = link.getAttribute('href'); // e.g., "#view"
+                        const href = link.getAttribute('href');
                         history.pushState(null, '', href);
                         navigate(href);
                     });
                 });
 
-                // Listen to back/forward buttons
                 window.addEventListener('popstate', () => {
                     navigate(window.location.hash || '#view');
                 });
-
-                // Also listen to hash changes just in case
                 window.addEventListener('hashchange', () => {
                     navigate(window.location.hash || '#view');
                 });
 
-                // Initial load based on current URL hash
                 const initialHash = window.location.hash || '#view';
-                // Ensure the URL has a hash if empty
                 if (!window.location.hash) {
                     history.replaceState(null, '', '#view');
                 }
@@ -662,7 +943,6 @@
         // ============================================================
         const stopwatch = new Stopwatch();
 
-        // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (stopwatch.intervalId) clearInterval(stopwatch.intervalId);
         });
