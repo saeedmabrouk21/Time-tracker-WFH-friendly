@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Countdown · Controls</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js">
+    </script>
+    <style>
+        /* ----- Reset & Base ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0b0e1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            padding: 1.5rem;
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(72, 49, 212, 0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 50%, rgba(212, 49, 130, 0.10) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 100%, rgba(49, 212, 200, 0.06) 0%, transparent 50%);
+        }
+
+        .app {
+            width: 100%;
+            max-width: 760px;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 3rem;
+            padding: 2rem 2rem 2.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            letter-spacing: 0.02em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .logo svg {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: #7c7cf8;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0.4rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.3rem;
+            border-radius: 2rem;
+        }
+
+        .nav-link {
+            padding: 0.5rem 1.2rem;
+            border: none;
+            border-radius: 1.6rem;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            letter-spacing: 0.01em;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-link:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .nav-link.active {
+            background: rgba(124, 124, 248, 0.25);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(124, 124, 248, 0.08);
+        }
+
+        .timer-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0.8rem 0 0.2rem;
+        }
+
+        .timer {
+            font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+            font-size: clamp(3.2rem, 15vw, 6rem);
+            font-weight: 300;
+            letter-spacing: 0.04em;
+            color: #fff;
+            text-shadow: 0 0 40px rgba(124, 124, 248, 0.15), 0 0 80px rgba(124, 124, 248, 0.05);
+            display: flex;
+            align-items: baseline;
+            gap: 0.05em;
+            line-height: 1.2;
+            user-select: none;
+        }
+
+        .timer .ms {
+            font-size: 0.45em;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.45);
+            margin-left: 0.2em;
+            min-width: 1.6em;
+            text-align: left;
+        }
+
+        .timer .separator {
+            color: rgba(255, 255, 255, 0.2);
+            font-weight: 200;
+            margin: 0 0.02em;
+        }
+
+        .timer .hours {
+            min-width: 2ch;
+            text-align: right;
+        }
+        .timer .minutes {
+            min-width: 2ch;
+            text-align: right;
+        }
+        .timer .seconds {
+            min-width: 2ch;
+            text-align: right;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 0.1rem;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.35);
+            letter-spacing: 0.02em;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse-dot 1.6s ease-in-out infinite;
+        }
+
+        .status-dot.paused {
+            background: #facc15;
+            animation: none;
+        }
+
+        .status-dot.finished {
+            background: #f87171;
+            animation: none;
+        }
+
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.3;
+                transform: scale(0.7);
+            }
+        }
+
+        .info-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 0.8rem 1.5rem;
+            margin-top: 1rem;
+            padding: 0.7rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.9rem;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .info-item .label {
+            font-weight: 400;
+            opacity: 0.7;
+        }
+
+        .info-item .value {
+            font-weight: 500;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .info-item .value.finished {
+            color: #f87171;
+            font-weight: 600;
+        }
+
+        .target-input {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.6rem;
+            color: #fff;
+            padding: 0.25rem 0.4rem;
+            width: 3.8rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .target-input:focus {
+            border-color: #7c7cf8;
+        }
+
+        .target-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+
+        .target-input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        .set-btn {
+            background: rgba(96, 165, 250, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(96, 165, 250, 0.15);
+            padding: 0.3rem 0.9rem;
+            border-radius: 1.2rem;
+            font-weight: 500;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .set-btn:hover {
+            background: rgba(96, 165, 250, 0.25);
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.10);
+            transform: scale(1.02);
+        }
+
+        .set-btn:active {
+            transform: scale(0.95);
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.9rem;
+            margin-top: 1.5rem;
+        }
+
+        .ctrl-btn {
+            padding: 0.9rem 0.3rem;
+            border: none;
+            border-radius: 1.4rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.02em;
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.1rem;
+            font-family: inherit;
+        }
+
+        .ctrl-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .ctrl-btn:active {
+            transform: translateY(0px) scale(0.97);
+        }
+
+        .ctrl-btn .icon {
+            font-size: 1.2rem;
+            line-height: 1.2;
+        }
+
+        .ctrl-btn .label {
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+
+        .ctrl-btn.pause {
+            background: rgba(250, 204, 21, 0.18);
+            color: #facc15;
+            border-color: rgba(250, 204, 21, 0.15);
+        }
+        .ctrl-btn.pause:hover {
+            background: rgba(250, 204, 21, 0.28);
+            box-shadow: 0 8px 30px rgba(250, 204, 21, 0.10);
+        }
+
+        .ctrl-btn.continue-btn {
+            background: rgba(74, 222, 128, 0.15);
+            color: #4ade80;
+            border-color: rgba(74, 222, 128, 0.12);
+        }
+        .ctrl-btn.continue-btn:hover {
+            background: rgba(74, 222, 128, 0.25);
+            box-shadow: 0 8px 30px rgba(74, 222, 128, 0.10);
+        }
+
+        .ctrl-btn.reset {
+            background: rgba(248, 113, 113, 0.14);
+            color: #f87171;
+            border-color: rgba(248, 113, 113, 0.10);
+        }
+        .ctrl-btn.reset:hover {
+            background: rgba(248, 113, 113, 0.24);
+            box-shadow: 0 8px 30px rgba(248, 113, 113, 0.10);
+        }
+
+        .ctrl-btn.add-hours {
+            background: rgba(96, 165, 250, 0.14);
+            color: #60a5fa;
+            border-color: rgba(96, 165, 250, 0.10);
+        }
+        .ctrl-btn.add-hours:hover {
+            background: rgba(96, 165, 250, 0.24);
+            box-shadow: 0 8px 30px rgba(96, 165, 250, 0.10);
+        }
+
+        .ctrl-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .view-hint {
+            text-align: center;
+            margin-top: 1.2rem;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 0.04em;
+        }
+
+        .view-hint span {
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .view-hint a {
+            color: #7c7cf8;
+            text-decoration: none;
+        }
+
+        @media (max-width: 600px) {
+            .app {
+                padding: 1.2rem 1.2rem 1.6rem;
+                border-radius: 2rem;
+            }
+            .nav-bar {
+                flex-direction: column;
+                gap: 0.8rem;
+                align-items: stretch;
+            }
+            .logo {
+                justify-content: center;
+            }
+            .nav-links {
+                justify-content: center;
+            }
+            .nav-link {
+                padding: 0.4rem 1rem;
+                font-size: 0.8rem;
+                flex: 1;
+                text-align: center;
+            }
+            .timer {
+                font-size: clamp(2.4rem, 12vw, 4rem);
+            }
+            .controls-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.6rem;
+            }
+            .ctrl-btn {
+                padding: 0.7rem 0.3rem;
+                font-size: 0.85rem;
+                flex-direction: row;
+            }
+            .ctrl-btn .label {
+                font-size: 0.8rem;
+            }
+            .info-grid {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.6rem;
+                padding: 0.8rem;
+            }
+            .info-item {
+                justify-content: space-between;
+            }
+            .target-input {
+                width: 3.5rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .controls-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
+            }
+            .ctrl-btn {
+                font-size: 0.75rem;
+                padding: 0.5rem 0.2rem;
+                border-radius: 1rem;
+            }
+            .ctrl-btn .icon {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app" role="main">
+        <!-- Navigation -->
+        <nav class="nav-bar">
+            <div class="logo">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span>Countdown</span>
+            </div>
+            <div class="nav-links">
+                <a class="nav-link" href="/">👁 View</a>
+                <a class="nav-link active" href="/control.html">🎮 Controls</a>
+            </div>
+        </nav>
+
+        <!-- ===== CONTROLS PAGE ===== -->
+        <section class="page active">
+            <div class="timer-wrapper">
+                <div class="timer" id="timerDisplayCtrl">
+                    <span class="hours" id="hCtrl">00</span>
+                    <span class="separator">:</span>
+                    <span class="minutes" id="mCtrl">00</span>
+                    <span class="separator">:</span>
+                    <span class="seconds" id="sCtrl">00</span>
+                    <span class="ms" id="msCtrl">.00</span>
+                </div>
+            </div>
+            <div class="status-row">
+                <span class="status-dot" id="statusDotCtrl"></span>
+                <span id="statusLabelCtrl">Ready</span>
+            </div>
+            <div class="info-grid" id="infoGridCtrl">
+                <div class="info-item">
+                    <span class="label">🕒 Egypt</span>
+                    <span class="value" id="currentTimeCtrl">--:--:--</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">🎯 Set countdown</span>
+                    <input type="number" class="target-input" id="setHours" value="0" min="0" max="99" placeholder="H" />
+                    <span style="color:rgba(255,255,255,0.4);">h</span>
+                    <input type="number" class="target-input" id="setMinutes" value="5" min="0" max="59" placeholder="M" />
+                    <span style="color:rgba(255,255,255,0.4);">m</span>
+                    <button class="set-btn" id="btnSetTarget">Set</button>
+                </div>
+                <div class="info-item">
+                    <span class="label">🏁 Finish at</span>
+                    <span class="value" id="completionCtrl">--:--</span>
+                </div>
+            </div>
+            <div class="controls-grid">
+                <button class="ctrl-btn pause" id="btnPause" disabled>
+                    <span class="icon">⏸</span>
+                    <span class="label">Pause</span>
+                </button>
+                <button class="ctrl-btn continue-btn" id="btnContinue" disabled>
+                    <span class="icon">▶</span>
+                    <span class="label">Continue</span>
+                </button>
+                <button class="ctrl-btn reset" id="btnReset">
+                    <span class="icon">⟳</span>
+                    <span class="label">Reset</span>
+                </button>
+                <button class="ctrl-btn add-hours" id="btnAddHours">
+                    <span class="icon">⏰</span>
+                    <span class="label">+8 Hours</span>
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // ============================================================
+        //  FIREBASE CONFIG – REPLACE WITH YOUR OWN
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const timerRef = db.ref('countdown');
+        const clientId = Math.random().toString(36).substring(2, 10);
+
+        // ============================================================
+        //  CONTROLS ENGINE (Read + Write)
+        // ============================================================
+
+        // DOM refs
+        const hCtrl = document.getElementById('hCtrl');
+        const mCtrl = document.getElementById('mCtrl');
+        const sCtrl = document.getElementById('sCtrl');
+        const msCtrl = document.getElementById('msCtrl');
+        const dotCtrl = document.getElementById('statusDotCtrl');
+        const labelCtrl = document.getElementById('statusLabelCtrl');
+        const currentTimeCtrl = document.getElementById('currentTimeCtrl');
+        const completionCtrl = document.getElementById('completionCtrl');
+
+        const btnPause = document.getElementById('btnPause');
+        const btnContinue = document.getElementById('btnContinue');
+        const btnReset = document.getElementById('btnReset');
+        const btnAddHours = document.getElementById('btnAddHours');
+        const btnSetTarget = document.getElementById('btnSetTarget');
+        const setHours = document.getElementById('setHours');
+        const setMinutes = document.getElementById('setMinutes');
+
+        // Local state
+        let remaining = 0;
+        let initialRemaining = 0;
+        let running = false;
+        let intervalId = null;
+        let startTime = 0;
+        let localUpdate = false;
+
+        function pad(n, d = 2) {
+            return String(n).padStart(d, '0');
+        }
+
+        function formatTime(ms) {
+            const total = Math.max(0, ms);
+            const hrs = Math.floor(total / 3600000);
+            const mins = Math.floor((total % 3600000) / 60000);
+            const secs = Math.floor((total % 60000) / 1000);
+            const millis = Math.floor((total % 1000) / 10);
+            return {
+                h: pad(hrs),
+                m: pad(mins),
+                s: pad(secs),
+                ms: pad(millis)
+            };
+        }
+
+        function updateTimerDisplay(ms) {
+            const t = formatTime(ms);
+            hCtrl.textContent = t.h;
+            mCtrl.textContent = t.m;
+            sCtrl.textContent = t.s;
+            msCtrl.textContent = '.' + t.ms;
+        }
+
+        function updateStatus(run, rem, init) {
+            const isFinished = rem === 0 && init > 0;
+            let statusText = 'Ready';
+            let dotClass = 'status-dot';
+
+            if (run) {
+                statusText = 'Running';
+                dotClass += ' running';
+            } else if (isFinished) {
+                statusText = '🎉 Time\'s up!';
+                dotClass += ' finished';
+            } else if (rem > 0) {
+                statusText = 'Paused';
+                dotClass += ' paused';
+            } else {
+                statusText = 'Set a target';
+                dotClass += ' paused';
+            }
+
+            labelCtrl.textContent = statusText;
+            dotCtrl.className = dotClass;
+
+            btnPause.disabled = !run;
+            btnContinue.disabled = run || isFinished || rem <= 0;
+        }
+
+        function updateCompletion(rem, init) {
+            const now = new Date();
+            const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
+            currentTimeCtrl.textContent = egyptTime.toTimeString().slice(0, 8);
+
+            if (rem <= 0 && init > 0) {
+                completionCtrl.textContent = '🎉 Time\'s up!';
+                completionCtrl.className = 'value finished';
+                return;
+            }
+            if (rem <= 0) {
+                completionCtrl.textContent = 'Set a target';
+                completionCtrl.className = 'value';
+                return;
+            }
+            const finishDate = new Date(egyptTime.getTime() + rem);
+            completionCtrl.textContent = finishDate.toTimeString().slice(0, 8);
+            completionCtrl.className = 'value';
+        }
+
+        function updateAll(rem, init, run) {
+            updateTimerDisplay(rem);
+            updateStatus(run, rem, init);
+            updateCompletion(rem, init);
+        }
+
+        function syncToFirebase() {
+            localUpdate = true;
+            timerRef.update({
+                remaining: Math.max(0, remaining),
+                initialRemaining: initialRemaining,
+                running: running,
+                lastUpdated: firebase.database.ServerValue.TIMESTAMP,
+                clientId: clientId
+            }).then(() => {
+                localUpdate = false;
+            }).catch(err => {
+                console.warn("Firebase sync failed", err);
+                localUpdate = false;
+            });
+        }
+
+        // ----- Timer Actions -----
+        function setTarget(hours, minutes) {
+            const totalMs = (hours * 3600 + minutes * 60) * 1000;
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+            running = false;
+            initialRemaining = totalMs;
+            remaining = totalMs;
+            updateAll(remaining, initialRemaining, running);
+            syncToFirebase();
+        }
+
+        function start() {
+            if (remaining <= 0) return;
+            if (running) return;
+            running = true;
+            startTime = performance.now() - (initialRemaining - remaining);
+            if (intervalId) clearInterval(intervalId);
+            intervalId = setInterval(tick, 20);
+            updateAll(remaining, initialRemaining, running);
+            syncToFirebase();
+        }
+
+        function pause() {
+            if (running) {
+                running = false;
+                clearInterval(intervalId);
+                intervalId = null;
+                const elapsed = performance.now() - startTime;
+                remaining = Math.max(0, initialRemaining - elapsed);
+                updateAll(remaining, initialRemaining, running);
+                syncToFirebase();
+            } else {
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+                updateAll(remaining, initialRemaining, running);
+            }
+        }
+
+        function reset() {
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+            running = false;
+            remaining = initialRemaining;
+            updateAll(remaining, initialRemaining, running);
+            syncToFirebase();
+        }
+
+        function addHours(hours) {
+            const ms = hours * 3600000;
+            remaining += ms;
+            initialRemaining += ms;
+            if (running) {
+                startTime = performance.now() - (initialRemaining - remaining);
+            }
+            updateAll(remaining, initialRemaining, running);
+            syncToFirebase();
+            btnAddHours.style.transform = 'scale(0.94)';
+            setTimeout(() => { btnAddHours.style.transform = ''; }, 150);
+        }
+
+        function tick() {
+            const elapsed = performance.now() - startTime;
+            let newRemaining = initialRemaining - elapsed;
+            if (newRemaining <= 0) {
+                newRemaining = 0;
+                remaining = 0;
+                running = false;
+                clearInterval(intervalId);
+                intervalId = null;
+                updateAll(remaining, initialRemaining, running);
+                syncToFirebase();
+                return;
+            }
+            remaining = newRemaining;
+            updateTimerDisplay(remaining);
+            updateCompletion(remaining, initialRemaining);
+            // Sync every 2 seconds
+            if (Math.floor(Date.now() / 2000) % 2 === 0) {
+                syncToFirebase();
+            }
+        }
+
+        // ----- Remote sync -----
+        function applyRemoteState(data) {
+            if (data.clientId === clientId) return;
+            const now = Date.now();
+            const elapsed = now - (data.lastUpdated || now);
+            let newRemaining = Math.max(0, data.remaining - elapsed);
+            const newRunning = data.running || false;
+            const newInitial = data.initialRemaining || 0;
+
+            // Stop local timer if running
+            if (running) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+
+            remaining = newRemaining;
+            initialRemaining = newInitial;
+            running = newRunning;
+
+            if (running && remaining > 0) {
+                startTime = performance.now() - (initialRemaining - remaining);
+                if (intervalId) clearInterval(intervalId);
+                intervalId = setInterval(tick, 20);
+            } else {
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+            }
+
+            updateAll(remaining, initialRemaining, running);
+        }
+
+        // Listen to Firebase
+        timerRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && !localUpdate) {
+                applyRemoteState(data);
+            }
+        });
+
+        // ----- UI Events -----
+        btnPause.addEventListener('click', pause);
+        btnContinue.addEventListener('click', start);
+        btnReset.addEventListener('click', reset);
+        btnAddHours.addEventListener('click', () => addHours(8));
+        btnSetTarget.addEventListener('click', () => {
+            const hrs = parseInt(setHours.value) || 0;
+            const mins = parseInt(setMinutes.value) || 0;
+            setTarget(hrs, mins);
+        });
+
+        // Load initial state
+        timerRef.once('value').then((snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                applyRemoteState(data);
+            } else {
+                setTarget(0, 5);
+            }
+        }).catch(() => {
+            setTarget(0, 5);
+        });
+
+        // Update current time every second
+        setInterval(() => {
+            const now = new Date();
+            const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
+            currentTimeCtrl.textContent = egyptTime.toTimeString().slice(0, 8);
+        }, 1000);
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => {
+            if (intervalId) clearInterval(intervalId);
+            syncToFirebase();
+        });
+    </script>
+
+</body>
+</html>
