@@ -10,13 +10,12 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js">
     </script>
     <style>
-        /* ----- Reset & Base ----- */
+        /* Same CSS as before – keep unchanged */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: #0b0e1a;
@@ -31,7 +30,6 @@
                 radial-gradient(ellipse at 80% 50%, rgba(212, 49, 130, 0.10) 0%, transparent 60%),
                 radial-gradient(ellipse at 50% 100%, rgba(49, 212, 200, 0.06) 0%, transparent 50%);
         }
-
         .app {
             width: 100%;
             max-width: 720px;
@@ -44,8 +42,6 @@
             box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
             transition: all 0.3s ease;
         }
-
-        /* ----- Header (logo only) ----- */
         .header {
             display: flex;
             justify-content: center;
@@ -54,7 +50,6 @@
             padding-bottom: 1rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
-
         .logo {
             display: flex;
             align-items: center;
@@ -64,7 +59,6 @@
             letter-spacing: 0.02em;
             color: rgba(255, 255, 255, 0.7);
         }
-
         .logo svg {
             width: 24px;
             height: 24px;
@@ -74,14 +68,12 @@
             stroke-linecap: round;
             stroke-linejoin: round;
         }
-
         .timer-wrapper {
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 0.8rem 0 0.2rem;
         }
-
         .timer {
             font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
             font-size: clamp(3.2rem, 15vw, 6rem);
@@ -95,7 +87,6 @@
             line-height: 1.2;
             user-select: none;
         }
-
         .timer .ms {
             font-size: 0.45em;
             font-weight: 300;
@@ -104,13 +95,11 @@
             min-width: 1.6em;
             text-align: left;
         }
-
         .timer .separator {
             color: rgba(255, 255, 255, 0.2);
             font-weight: 200;
             margin: 0 0.02em;
         }
-
         .timer .hours {
             min-width: 2ch;
             text-align: right;
@@ -123,7 +112,6 @@
             min-width: 2ch;
             text-align: right;
         }
-
         .status-row {
             display: flex;
             justify-content: center;
@@ -134,7 +122,6 @@
             color: rgba(255, 255, 255, 0.35);
             letter-spacing: 0.02em;
         }
-
         .status-dot {
             display: inline-block;
             width: 8px;
@@ -143,17 +130,14 @@
             background: #4ade80;
             animation: pulse-dot 1.6s ease-in-out infinite;
         }
-
         .status-dot.paused {
             background: #facc15;
             animation: none;
         }
-
         .status-dot.finished {
             background: #f87171;
             animation: none;
         }
-
         @keyframes pulse-dot {
             0%,
             100% {
@@ -165,7 +149,6 @@
                 transform: scale(0.7);
             }
         }
-
         .info-grid {
             display: flex;
             flex-wrap: wrap;
@@ -179,54 +162,35 @@
             border: 1px solid rgba(255, 255, 255, 0.04);
             font-size: 0.9rem;
         }
-
         .info-item {
             display: flex;
             align-items: center;
             gap: 0.4rem;
             color: rgba(255, 255, 255, 0.6);
         }
-
         .info-item .label {
             font-weight: 400;
             opacity: 0.7;
         }
-
         .info-item .value {
             font-weight: 500;
             color: #fff;
             font-variant-numeric: tabular-nums;
         }
-
         .info-item .value.finished {
             color: #f87171;
             font-weight: 600;
         }
-
         @media (max-width: 600px) {
-            .app {
-                padding: 1.2rem 1.2rem 1.6rem;
-                border-radius: 2rem;
-            }
-            .timer {
-                font-size: clamp(2.4rem, 12vw, 4rem);
-            }
-            .info-grid {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 0.6rem;
-                padding: 0.8rem;
-            }
-            .info-item {
-                justify-content: space-between;
-            }
+            .app { padding: 1.2rem; border-radius: 2rem; }
+            .timer { font-size: clamp(2.4rem, 12vw, 4rem); }
+            .info-grid { flex-direction: column; align-items: stretch; gap: 0.6rem; padding: 0.8rem; }
+            .info-item { justify-content: space-between; }
         }
     </style>
 </head>
 <body>
-
     <div class="app" role="main">
-        <!-- Header: logo only, no navigation -->
         <header class="header">
             <div class="logo">
                 <svg viewBox="0 0 24 24">
@@ -236,8 +200,6 @@
                 <span>Countdown</span>
             </div>
         </header>
-
-        <!-- ===== VIEW PAGE ===== -->
         <section>
             <div class="timer-wrapper">
                 <div class="timer" id="timerDisplay">
@@ -272,7 +234,7 @@
 
     <script>
         // ============================================================
-        //  FIREBASE CONFIG – REPLACE WITH YOUR OWN
+        //  FIREBASE CONFIG (replace with your own)
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyB6sHNLOVLT4vlBh93VFNEWqOe21XuMvTg",
@@ -293,7 +255,6 @@
         //  VIEW ENGINE – READ ONLY WITH LOCAL TICKING
         // ============================================================
 
-        // DOM refs
         const hEl = document.getElementById('h');
         const mEl = document.getElementById('m');
         const sEl = document.getElementById('s');
@@ -304,17 +265,13 @@
         const remainingView = document.getElementById('remainingView');
         const completionView = document.getElementById('completionView');
 
-        // Local state
         let localRemaining = 0;
         let localInitial = 0;
         let localRunning = false;
         let localStartTime = 0;
         let intervalId = null;
-        let lastRemoteUpdate = 0;
 
-        function pad(n, d = 2) {
-            return String(n).padStart(d, '0');
-        }
+        function pad(n, d = 2) { return String(n).padStart(d, '0'); }
 
         function formatTime(ms) {
             const total = Math.max(0, ms);
@@ -322,12 +279,7 @@
             const mins = Math.floor((total % 3600000) / 60000);
             const secs = Math.floor((total % 60000) / 1000);
             const millis = Math.floor((total % 1000) / 10);
-            return {
-                h: pad(hrs),
-                m: pad(mins),
-                s: pad(secs),
-                ms: pad(millis)
-            };
+            return { h: pad(hrs), m: pad(mins), s: pad(secs), ms: pad(millis) };
         }
 
         function updateTimerDisplay(remaining) {
@@ -343,7 +295,6 @@
             const isFinished = remaining === 0 && initial > 0;
             let statusText = 'Ready';
             let dotClass = 'status-dot';
-
             if (running) {
                 statusText = 'Running';
                 dotClass += ' running';
@@ -357,7 +308,6 @@
                 statusText = 'Set a target';
                 dotClass += ' paused';
             }
-
             labelEl.textContent = statusText;
             dotEl.className = dotClass;
         }
@@ -365,8 +315,7 @@
         function updateCompletion(remaining, initial) {
             const now = new Date();
             const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
-            const timeStr = egyptTime.toTimeString().slice(0, 8);
-            currentTimeView.textContent = timeStr;
+            currentTimeView.textContent = egyptTime.toTimeString().slice(0, 8);
 
             if (remaining <= 0 && initial > 0) {
                 completionView.textContent = '🎉 Time\'s up!';
@@ -383,13 +332,12 @@
             completionView.className = 'value';
         }
 
-        // Local tick function – called every 20ms
         function tick() {
             if (!localRunning) return;
             const elapsed = performance.now() - localStartTime;
-            let remaining = localInitial - elapsed;
-            if (remaining <= 0) {
-                remaining = 0;
+            let newRemaining = localInitial - elapsed;
+            if (newRemaining <= 0) {
+                newRemaining = 0;
                 localRunning = false;
                 clearInterval(intervalId);
                 intervalId = null;
@@ -398,19 +346,22 @@
                 updateCompletion(0, localInitial);
                 return;
             }
-            localRemaining = remaining;
-            updateTimerDisplay(remaining);
-            // Completion time updates every second – we rely on the setInterval below
+            localRemaining = newRemaining;
+            updateTimerDisplay(newRemaining);
         }
 
-        // Function to apply remote state and start/stop local timer
         function applyRemoteState(data) {
-            // If we get a remote update, we want to align our local timer with it.
-            // We'll use the remote remaining as the current remaining, and start the timer if running.
-            const now = Date.now();
-            const elapsed = now - (data.lastUpdated || now);
-            let newRemaining = Math.max(0, data.remaining - elapsed);
             const newRunning = data.running || false;
+            let newRemaining;
+            if (newRunning) {
+                // If running, subtract elapsed time since lastUpdated
+                const now = Date.now();
+                const elapsed = now - (data.lastUpdated || now);
+                newRemaining = Math.max(0, data.remaining - elapsed);
+            } else {
+                // If paused, use exact remaining value
+                newRemaining = Math.max(0, data.remaining);
+            }
             const newInitial = data.initialRemaining || 0;
 
             // Stop local interval
@@ -430,55 +381,42 @@
                 localRunning = false;
             }
 
-            // Update UI
             updateTimerDisplay(localRemaining);
             updateStatus(localRunning, localRemaining, localInitial);
             updateCompletion(localRemaining, localInitial);
-            lastRemoteUpdate = now;
         }
 
-        // Listen to Firebase
         timerRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 applyRemoteState(data);
             } else {
-                // No data – set default
+                // No data – default
                 const now = new Date();
                 const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
                 currentTimeView.textContent = egyptTime.toTimeString().slice(0, 8);
                 localRemaining = 0;
                 localInitial = 0;
                 localRunning = false;
-                if (intervalId) {
-                    clearInterval(intervalId);
-                    intervalId = null;
-                }
+                if (intervalId) { clearInterval(intervalId);
+                    intervalId = null; }
                 updateTimerDisplay(0);
                 updateStatus(false, 0, 0);
                 updateCompletion(0, 0);
             }
         });
 
-        // Update current time and completion every second (for the clock)
+        // Update clock every second
         setInterval(() => {
             const now = new Date();
             const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
             currentTimeView.textContent = egyptTime.toTimeString().slice(0, 8);
-            // Recalculate completion if not running locally? The tick updates it, but we can also update it here.
-            // To keep it fresh, we'll call updateCompletion with the current localRemaining and localInitial.
-            // But we have to be careful not to interfere with the tick.
             if (!localRunning) {
-                // If paused or finished, we just update the completion time based on current remaining.
-                // But if it's running, the tick already updates it.
-                // We'll simply call updateCompletion with the latest values.
                 updateCompletion(localRemaining, localInitial);
             }
         }, 1000);
 
-        // Initial read
         timerRef.once('value');
     </script>
-
 </body>
 </html>
