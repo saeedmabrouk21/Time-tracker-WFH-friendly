@@ -45,9 +45,10 @@
             transition: all 0.3s ease;
         }
 
-        .nav-bar {
+        /* ----- Header (logo only) ----- */
+        .header {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             margin-bottom: 2rem;
             padding-bottom: 1rem;
@@ -72,39 +73,6 @@
             stroke-width: 2;
             stroke-linecap: round;
             stroke-linejoin: round;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 0.4rem;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 0.3rem;
-            border-radius: 2rem;
-        }
-
-        .nav-link {
-            padding: 0.5rem 1.2rem;
-            border: none;
-            border-radius: 1.6rem;
-            background: transparent;
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            letter-spacing: 0.01em;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .nav-link:hover {
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .nav-link.active {
-            background: rgba(124, 124, 248, 0.25);
-            color: #fff;
-            box-shadow: 0 0 20px rgba(124, 124, 248, 0.08);
         }
 
         .timer-wrapper {
@@ -235,48 +203,10 @@
             font-weight: 600;
         }
 
-        .view-hint {
-            text-align: center;
-            margin-top: 1.2rem;
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.2);
-            letter-spacing: 0.04em;
-        }
-
-        .view-hint span {
-            display: inline-block;
-            padding: 0.3rem 1rem;
-            border-radius: 2rem;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .view-hint a {
-            color: #7c7cf8;
-            text-decoration: none;
-        }
-
         @media (max-width: 600px) {
             .app {
                 padding: 1.2rem 1.2rem 1.6rem;
                 border-radius: 2rem;
-            }
-            .nav-bar {
-                flex-direction: column;
-                gap: 0.8rem;
-                align-items: stretch;
-            }
-            .logo {
-                justify-content: center;
-            }
-            .nav-links {
-                justify-content: center;
-            }
-            .nav-link {
-                padding: 0.4rem 1rem;
-                font-size: 0.8rem;
-                flex: 1;
-                text-align: center;
             }
             .timer {
                 font-size: clamp(2.4rem, 12vw, 4rem);
@@ -296,8 +226,8 @@
 <body>
 
     <div class="app" role="main">
-        <!-- Navigation -->
-        <nav class="nav-bar">
+        <!-- Header: logo only, no navigation -->
+        <header class="header">
             <div class="logo">
                 <svg viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="10" />
@@ -305,14 +235,10 @@
                 </svg>
                 <span>Countdown</span>
             </div>
-            <div class="nav-links">
-                <a class="nav-link active" href="/">👁 View</a>
-                <a class="nav-link" href="/control.html">🎮 Controls</a>
-            </div>
-        </nav>
+        </header>
 
         <!-- ===== VIEW PAGE ===== -->
-        <section class="page active">
+        <section>
             <div class="timer-wrapper">
                 <div class="timer" id="timerDisplay">
                     <span class="hours" id="h">00</span>
@@ -340,9 +266,6 @@
                     <span class="label">🏁 Finish at</span>
                     <span class="value" id="completionView">--:--</span>
                 </div>
-            </div>
-            <div class="view-hint">
-                <span>👁 View-only · switch to <a href="/control.html">Controls</a> to interact</span>
             </div>
         </section>
     </div>
@@ -379,8 +302,6 @@
         const currentTimeView = document.getElementById('currentTimeView');
         const remainingView = document.getElementById('remainingView');
         const completionView = document.getElementById('completionView');
-
-        let lastUpdate = 0;
 
         function pad(n, d = 2) {
             return String(n).padStart(d, '0');
