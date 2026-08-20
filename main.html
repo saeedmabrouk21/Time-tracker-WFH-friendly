@@ -1,1 +1,672 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stopwatch</title>
+    <style>
+        /* ----- Reset & Base ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0b0e1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            padding: 1.5rem;
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(72, 49, 212, 0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 50%, rgba(212, 49, 130, 0.10) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 100%, rgba(49, 212, 200, 0.06) 0%, transparent 50%);
+        }
+
+        .app {
+            width: 100%;
+            max-width: 720px;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 3rem;
+            padding: 2rem 2rem 2.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        /* ----- Navigation ----- */
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            letter-spacing: 0.02em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .logo svg {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: #7c7cf8;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0.4rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.3rem;
+            border-radius: 2rem;
+        }
+
+        .nav-link {
+            padding: 0.5rem 1.2rem;
+            border: none;
+            border-radius: 1.6rem;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            letter-spacing: 0.01em;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-link:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .nav-link.active {
+            background: rgba(124, 124, 248, 0.25);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(124, 124, 248, 0.08);
+        }
+
+        /* ----- Pages ----- */
+        .page {
+            display: none;
+            animation: fadeUp 0.4s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            0% {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ----- Timer Display ----- */
+        .timer-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.2rem 0 0.8rem;
+        }
+
+        .timer {
+            font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+            font-size: clamp(3rem, 15vw, 5.8rem);
+            font-weight: 300;
+            letter-spacing: 0.04em;
+            color: #fff;
+            text-shadow: 0 0 40px rgba(124, 124, 248, 0.15), 0 0 80px rgba(124, 124, 248, 0.05);
+            display: flex;
+            align-items: baseline;
+            gap: 0.05em;
+            line-height: 1.2;
+            user-select: none;
+        }
+
+        .timer .ms {
+            font-size: 0.45em;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.45);
+            margin-left: 0.2em;
+            min-width: 1.6em;
+            text-align: left;
+        }
+
+        .timer .separator {
+            color: rgba(255, 255, 255, 0.2);
+            font-weight: 200;
+            margin: 0 0.02em;
+        }
+
+        .timer .hours {
+            min-width: 2ch;
+            text-align: right;
+        }
+        .timer .minutes {
+            min-width: 2ch;
+            text-align: right;
+        }
+        .timer .seconds {
+            min-width: 2ch;
+            text-align: right;
+        }
+
+        /* ----- Status Indicator ----- */
+        .status-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 0.8rem;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.35);
+            letter-spacing: 0.02em;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse-dot 1.6s ease-in-out infinite;
+        }
+
+        .status-dot.paused {
+            background: #facc15;
+            animation: none;
+        }
+
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.3;
+                transform: scale(0.7);
+            }
+        }
+
+        /* ----- Controls Grid (Page 2) ----- */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.9rem;
+            margin-top: 1.8rem;
+        }
+
+        .ctrl-btn {
+            padding: 1rem 0.5rem;
+            border: none;
+            border-radius: 1.4rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.02em;
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-family: inherit;
+        }
+
+        .ctrl-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .ctrl-btn:active {
+            transform: translateY(0px) scale(0.97);
+        }
+
+        .ctrl-btn .icon {
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        .ctrl-btn.pause {
+            background: rgba(250, 204, 21, 0.18);
+            color: #facc15;
+            border-color: rgba(250, 204, 21, 0.15);
+        }
+        .ctrl-btn.pause:hover {
+            background: rgba(250, 204, 21, 0.28);
+            box-shadow: 0 8px 30px rgba(250, 204, 21, 0.10);
+        }
+
+        .ctrl-btn.continue-btn {
+            background: rgba(74, 222, 128, 0.15);
+            color: #4ade80;
+            border-color: rgba(74, 222, 128, 0.12);
+        }
+        .ctrl-btn.continue-btn:hover {
+            background: rgba(74, 222, 128, 0.25);
+            box-shadow: 0 8px 30px rgba(74, 222, 128, 0.10);
+        }
+
+        .ctrl-btn.reset {
+            background: rgba(248, 113, 113, 0.14);
+            color: #f87171;
+            border-color: rgba(248, 113, 113, 0.10);
+        }
+        .ctrl-btn.reset:hover {
+            background: rgba(248, 113, 113, 0.24);
+            box-shadow: 0 8px 30px rgba(248, 113, 113, 0.10);
+        }
+
+        .ctrl-btn.add-hours {
+            background: rgba(96, 165, 250, 0.14);
+            color: #60a5fa;
+            border-color: rgba(96, 165, 250, 0.10);
+        }
+        .ctrl-btn.add-hours:hover {
+            background: rgba(96, 165, 250, 0.24);
+            box-shadow: 0 8px 30px rgba(96, 165, 250, 0.10);
+        }
+
+        .ctrl-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* ----- View hint ----- */
+        .view-hint {
+            text-align: center;
+            margin-top: 1.6rem;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 0.04em;
+        }
+
+        .view-hint span {
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .view-hint a {
+            color: #7c7cf8;
+            text-decoration: none;
+        }
+
+        /* ----- Responsive ----- */
+        @media (max-width: 500px) {
+            .app {
+                padding: 1.2rem 1.2rem 1.6rem;
+                border-radius: 2rem;
+            }
+
+            .nav-bar {
+                flex-direction: column;
+                gap: 0.8rem;
+                align-items: stretch;
+            }
+
+            .logo {
+                justify-content: center;
+            }
+
+            .nav-links {
+                justify-content: center;
+            }
+
+            .nav-link {
+                padding: 0.4rem 1rem;
+                font-size: 0.8rem;
+                flex: 1;
+                text-align: center;
+            }
+
+            .timer {
+                font-size: clamp(2.4rem, 12vw, 4rem);
+            }
+
+            .controls-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.6rem;
+            }
+
+            .ctrl-btn {
+                padding: 0.8rem 0.3rem;
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .controls-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
+            }
+            .ctrl-btn {
+                font-size: 0.75rem;
+                padding: 0.6rem 0.2rem;
+                border-radius: 1rem;
+            }
+            .ctrl-btn .icon {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app" role="main">
+        <!-- Navigation -->
+        <nav class="nav-bar">
+            <div class="logo">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span>Stopwatch</span>
+            </div>
+            <div class="nav-links">
+                <a class="nav-link active" data-page="view" href="#view">👁 View</a>
+                <a class="nav-link" data-page="controls" href="#control">🎮 Controls</a>
+            </div>
+        </nav>
+
+        <!-- ===== PAGE 1: VIEW ONLY ===== -->
+        <section class="page active" id="page-view" data-page="view">
+            <div class="timer-wrapper">
+                <div class="timer" id="timerDisplay">
+                    <span class="hours" id="h">00</span>
+                    <span class="separator">:</span>
+                    <span class="minutes" id="m">00</span>
+                    <span class="separator">:</span>
+                    <span class="seconds" id="s">00</span>
+                    <span class="ms" id="ms">.00</span>
+                </div>
+            </div>
+            <div class="status-row">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusLabel">Running</span>
+            </div>
+            <div class="view-hint">
+                <span>⏱ View-only mode · switch to <a href="#control">Controls</a> to interact</span>
+            </div>
+        </section>
+
+        <!-- ===== PAGE 2: CONTROLS ===== -->
+        <section class="page" id="page-controls" data-page="controls">
+            <div class="timer-wrapper">
+                <div class="timer" id="timerDisplayCtrl">
+                    <span class="hours" id="hCtrl">00</span>
+                    <span class="separator">:</span>
+                    <span class="minutes" id="mCtrl">00</span>
+                    <span class="separator">:</span>
+                    <span class="seconds" id="sCtrl">00</span>
+                    <span class="ms" id="msCtrl">.00</span>
+                </div>
+            </div>
+            <div class="status-row">
+                <span class="status-dot" id="statusDotCtrl"></span>
+                <span id="statusLabelCtrl">Running</span>
+            </div>
+
+            <div class="controls-grid">
+                <button class="ctrl-btn pause" id="btnPause">
+                    <span class="icon">⏸</span> Pause
+                </button>
+                <button class="ctrl-btn continue-btn" id="btnContinue" disabled>
+                    <span class="icon">▶</span> Continue
+                </button>
+                <button class="ctrl-btn reset" id="btnReset">
+                    <span class="icon">⟳</span> Reset
+                </button>
+                <button class="ctrl-btn add-hours" id="btnAddHours">
+                    <span class="icon">⏰</span> +8 Hours
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // ============================================================
+        //  STOPWATCH ENGINE
+        // ============================================================
+
+        class Stopwatch {
+            constructor() {
+                this.elapsed = 0; // ms
+                this.running = false;
+                this.intervalId = null;
+                this.startTimestamp = 0;
+                this.pausedElapsed = 0;
+
+                // DOM refs – view page
+                this.hEl = document.getElementById('h');
+                this.mEl = document.getElementById('m');
+                this.sEl = document.getElementById('s');
+                this.msEl = document.getElementById('ms');
+                this.dotEl = document.getElementById('statusDot');
+                this.labelEl = document.getElementById('statusLabel');
+
+                // DOM refs – controls page
+                this.hCtrl = document.getElementById('hCtrl');
+                this.mCtrl = document.getElementById('mCtrl');
+                this.sCtrl = document.getElementById('sCtrl');
+                this.msCtrl = document.getElementById('msCtrl');
+                this.dotCtrl = document.getElementById('statusDotCtrl');
+                this.labelCtrl = document.getElementById('statusLabelCtrl');
+
+                // Buttons
+                this.btnPause = document.getElementById('btnPause');
+                this.btnContinue = document.getElementById('btnContinue');
+                this.btnReset = document.getElementById('btnReset');
+                this.btnAddHours = document.getElementById('btnAddHours');
+
+                // Bind UI updates
+                this.updateDisplay = this.updateDisplay.bind(this);
+                this.tick = this.tick.bind(this);
+
+                // Start running by default
+                this.start();
+
+                // Attach events
+                this.btnPause.addEventListener('click', () => this.pause());
+                this.btnContinue.addEventListener('click', () => this.start());
+                this.btnReset.addEventListener('click', () => this.reset());
+                this.btnAddHours.addEventListener('click', () => this.addHours(8));
+
+                // Routing (Hash-based)
+                this.setupRouting();
+            }
+
+            // ----- Core -----
+            start() {
+                if (this.running) return;
+                this.running = true;
+                this.startTimestamp = performance.now() - this.elapsed;
+                this.intervalId = setInterval(this.tick, 20);
+                this.updateUIState();
+                this.btnContinue.disabled = true;
+                this.btnPause.disabled = false;
+            }
+
+            pause() {
+                if (!this.running) return;
+                this.running = false;
+                clearInterval(this.intervalId);
+                this.intervalId = null;
+                this.elapsed = performance.now() - this.startTimestamp;
+                this.updateUIState();
+                this.btnContinue.disabled = false;
+                this.btnPause.disabled = true;
+            }
+
+            reset() {
+                const wasRunning = this.running;
+                if (wasRunning) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                    this.running = false;
+                }
+                this.elapsed = 0;
+                this.startTimestamp = performance.now();
+                this.updateDisplay();
+                this.updateUIState();
+                this.btnContinue.disabled = false;
+                this.btnPause.disabled = true;
+                if (wasRunning) {
+                    this.start();
+                }
+            }
+
+            addHours(hours) {
+                const ms = hours * 60 * 60 * 1000;
+                this.elapsed += ms;
+                if (this.running) {
+                    this.startTimestamp = performance.now() - this.elapsed;
+                }
+                this.updateDisplay();
+                this.btnAddHours.style.transform = 'scale(0.94)';
+                setTimeout(() => { this.btnAddHours.style.transform = ''; }, 150);
+            }
+
+            tick() {
+                this.elapsed = performance.now() - this.startTimestamp;
+                this.updateDisplay();
+            }
+
+            // ----- Display -----
+            updateDisplay() {
+                const total = Math.max(0, this.elapsed);
+                const hrs = Math.floor(total / 3600000);
+                const mins = Math.floor((total % 3600000) / 60000);
+                const secs = Math.floor((total % 60000) / 1000);
+                const millis = Math.floor((total % 1000) / 10);
+
+                const pad = (n, d = 2) => String(n).padStart(d, '0');
+
+                const hStr = pad(hrs);
+                const mStr = pad(mins);
+                const sStr = pad(secs);
+                const msStr = pad(millis);
+
+                // View page
+                this.hEl.textContent = hStr;
+                this.mEl.textContent = mStr;
+                this.sEl.textContent = sStr;
+                this.msEl.textContent = '.' + msStr;
+
+                // Controls page
+                this.hCtrl.textContent = hStr;
+                this.mCtrl.textContent = mStr;
+                this.sCtrl.textContent = sStr;
+                this.msCtrl.textContent = '.' + msStr;
+            }
+
+            updateUIState() {
+                const isRunning = this.running;
+                const statusText = isRunning ? 'Running' : 'Paused';
+
+                this.labelEl.textContent = statusText;
+                this.dotEl.classList.toggle('paused', !isRunning);
+                this.labelCtrl.textContent = statusText;
+                this.dotCtrl.classList.toggle('paused', !isRunning);
+
+                this.btnPause.disabled = !isRunning;
+                this.btnContinue.disabled = isRunning;
+            }
+
+            // ----- Routing (Hash-based for GitHub Pages) -----
+            setupRouting() {
+                const viewPage = document.getElementById('page-view');
+                const controlsPage = document.getElementById('page-controls');
+                const navLinks = document.querySelectorAll('.nav-link');
+
+                const navigate = (hash) => {
+                    // Remove the '#' and default to 'view'
+                    const page = hash.replace('#', '') || 'view';
+                    const isView = page === 'view';
+
+                    // Toggle pages
+                    viewPage.classList.toggle('active', isView);
+                    controlsPage.classList.toggle('active', !isView);
+
+                    // Update nav links
+                    navLinks.forEach(link => {
+                        const linkPage = link.dataset.page;
+                        link.classList.toggle('active', linkPage === page);
+                    });
+                };
+
+                // Click handlers for nav links
+                navLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const href = link.getAttribute('href'); // e.g., "#view"
+                        history.pushState(null, '', href);
+                        navigate(href);
+                    });
+                });
+
+                // Listen to back/forward buttons
+                window.addEventListener('popstate', () => {
+                    navigate(window.location.hash || '#view');
+                });
+
+                // Also listen to hash changes just in case
+                window.addEventListener('hashchange', () => {
+                    navigate(window.location.hash || '#view');
+                });
+
+                // Initial load based on current URL hash
+                const initialHash = window.location.hash || '#view';
+                // Ensure the URL has a hash if empty
+                if (!window.location.hash) {
+                    history.replaceState(null, '', '#view');
+                }
+                navigate(initialHash);
+            }
+        }
+
+        // ============================================================
+        //  INIT
+        // ============================================================
+        const stopwatch = new Stopwatch();
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (stopwatch.intervalId) clearInterval(stopwatch.intervalId);
+        });
+    </script>
+
+</body>
+</html>
