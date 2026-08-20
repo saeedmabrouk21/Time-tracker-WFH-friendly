@@ -275,22 +275,22 @@
         //  FIREBASE CONFIG – REPLACE WITH YOUR OWN
         // ============================================================
         const firebaseConfig = {
-  apiKey: "AIzaSyB6sHNLOVLT4vlBh93VFNEWqOe21XuMvTg",
-  authDomain: "timer-47497.firebaseapp.com",
-  databaseURL: "https://timer-47497-default-rtdb.firebaseio.com",
-  projectId: "timer-47497",
-  storageBucket: "timer-47497.firebasestorage.app",
-  messagingSenderId: "745059565421",
-  appId: "1:745059565421:web:0c893aec7c73bdcef9a464",
-  measurementId: "G-KL3T9ZQ1J4"
-};
+            apiKey: "AIzaSyB6sHNLOVLT4vlBh93VFNEWqOe21XuMvTg",
+            authDomain: "timer-47497.firebaseapp.com",
+            databaseURL: "https://timer-47497-default-rtdb.firebaseio.com",
+            projectId: "timer-47497",
+            storageBucket: "timer-47497.firebasestorage.app",
+            messagingSenderId: "745059565421",
+            appId: "1:745059565421:web:0c893aec7c73bdcef9a464",
+            measurementId: "G-KL3T9ZQ1J4"
+        };
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const timerRef = db.ref('countdown');
 
         // ============================================================
-        //  VIEW ENGINE – READ ONLY
+        //  VIEW ENGINE – READ ONLY WITH LOCAL TICKING
         // ============================================================
 
         // DOM refs
@@ -303,6 +303,14 @@
         const currentTimeView = document.getElementById('currentTimeView');
         const remainingView = document.getElementById('remainingView');
         const completionView = document.getElementById('completionView');
+
+        // Local state
+        let localRemaining = 0;
+        let localInitial = 0;
+        let localRunning = false;
+        let localStartTime = 0;
+        let intervalId = null;
+        let lastRemoteUpdate = 0;
 
         function pad(n, d = 2) {
             return String(n).padStart(d, '0');
@@ -375,16 +383,58 @@
             completionView.className = 'value';
         }
 
+        // Local tick function – called every 20ms
+        function tick() {
+            if (!localRunning) return;
+            const elapsed = performance.now() - localStartTime;
+            let remaining = localInitial - elapsed;
+            if (remaining <= 0) {
+                remaining = 0;
+                localRunning = false;
+                clearInterval(intervalId);
+                intervalId = null;
+                updateTimerDisplay(0);
+                updateStatus(false, 0, localInitial);
+                updateCompletion(0, localInitial);
+                return;
+            }
+            localRemaining = remaining;
+            updateTimerDisplay(remaining);
+            // Completion time updates every second – we rely on the setInterval below
+        }
+
+        // Function to apply remote state and start/stop local timer
         function applyRemoteState(data) {
+            // If we get a remote update, we want to align our local timer with it.
+            // We'll use the remote remaining as the current remaining, and start the timer if running.
             const now = Date.now();
             const elapsed = now - (data.lastUpdated || now);
-            let remaining = Math.max(0, data.remaining - elapsed);
-            const running = data.running || false;
-            const initial = data.initialRemaining || 0;
+            let newRemaining = Math.max(0, data.remaining - elapsed);
+            const newRunning = data.running || false;
+            const newInitial = data.initialRemaining || 0;
 
-            updateTimerDisplay(remaining);
-            updateStatus(running, remaining, initial);
-            updateCompletion(remaining, initial);
+            // Stop local interval
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+
+            localRemaining = newRemaining;
+            localInitial = newInitial;
+            localRunning = newRunning;
+
+            if (localRunning && localRemaining > 0) {
+                localStartTime = performance.now() - (localInitial - localRemaining);
+                intervalId = setInterval(tick, 20);
+            } else {
+                localRunning = false;
+            }
+
+            // Update UI
+            updateTimerDisplay(localRemaining);
+            updateStatus(localRunning, localRemaining, localInitial);
+            updateCompletion(localRemaining, localInitial);
+            lastRemoteUpdate = now;
         }
 
         // Listen to Firebase
@@ -393,24 +443,40 @@
             if (data) {
                 applyRemoteState(data);
             } else {
-                // Default state
+                // No data – set default
                 const now = new Date();
                 const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
                 currentTimeView.textContent = egyptTime.toTimeString().slice(0, 8);
+                localRemaining = 0;
+                localInitial = 0;
+                localRunning = false;
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
                 updateTimerDisplay(0);
                 updateStatus(false, 0, 0);
                 updateCompletion(0, 0);
             }
         });
 
-        // Update current time every second
+        // Update current time and completion every second (for the clock)
         setInterval(() => {
             const now = new Date();
             const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
             currentTimeView.textContent = egyptTime.toTimeString().slice(0, 8);
+            // Recalculate completion if not running locally? The tick updates it, but we can also update it here.
+            // To keep it fresh, we'll call updateCompletion with the current localRemaining and localInitial.
+            // But we have to be careful not to interfere with the tick.
+            if (!localRunning) {
+                // If paused or finished, we just update the completion time based on current remaining.
+                // But if it's running, the tick already updates it.
+                // We'll simply call updateCompletion with the latest values.
+                updateCompletion(localRemaining, localInitial);
+            }
         }, 1000);
 
-        // Trigger a read immediately
+        // Initial read
         timerRef.once('value');
     </script>
 
