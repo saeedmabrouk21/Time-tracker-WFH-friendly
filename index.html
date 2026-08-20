@@ -4,13 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Countdown · View</title>
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js">
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js">
     </script>
     <style>
-        /* Same CSS as before – keep unchanged */
+        /* same as before */
         * {
             margin: 0;
             padding: 0;
@@ -234,7 +233,7 @@
 
     <script>
         // ============================================================
-        //  FIREBASE CONFIG (replace with your own)
+        //  FIREBASE CONFIG (REPLACE WITH YOUR OWN)
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyB6sHNLOVLT4vlBh93VFNEWqOe21XuMvTg",
@@ -348,23 +347,21 @@
             }
             localRemaining = newRemaining;
             updateTimerDisplay(newRemaining);
+            // Update completion time (it's updated every second separately)
         }
 
         function applyRemoteState(data) {
             const newRunning = data.running || false;
             let newRemaining;
             if (newRunning) {
-                // If running, subtract elapsed time since lastUpdated
                 const now = Date.now();
                 const elapsed = now - (data.lastUpdated || now);
                 newRemaining = Math.max(0, data.remaining - elapsed);
             } else {
-                // If paused, use exact remaining value
                 newRemaining = Math.max(0, data.remaining);
             }
             const newInitial = data.initialRemaining || 0;
 
-            // Stop local interval
             if (intervalId) {
                 clearInterval(intervalId);
                 intervalId = null;
@@ -391,7 +388,6 @@
             if (data) {
                 applyRemoteState(data);
             } else {
-                // No data – default
                 const now = new Date();
                 const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
                 currentTimeView.textContent = egyptTime.toTimeString().slice(0, 8);
@@ -406,14 +402,13 @@
             }
         });
 
-        // Update clock every second
+        // Update clock and completion every second
         setInterval(() => {
             const now = new Date();
             const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
             currentTimeView.textContent = egyptTime.toTimeString().slice(0, 8);
-            if (!localRunning) {
-                updateCompletion(localRemaining, localInitial);
-            }
+            // Refresh completion time (especially when paused)
+            updateCompletion(localRemaining, localInitial);
         }, 1000);
 
         timerRef.once('value');
