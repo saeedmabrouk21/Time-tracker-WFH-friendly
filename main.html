@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Countdown Timer · Multi-device</title>
+    <title>Countdown Timer · Multi‑device Sync</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js">
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js">
     </script>
     <style>
-        /* ----- CSS (same as before, keep unchanged) ----- */
+        /* ----- CSS (unchanged from previous) ----- */
         * {
             margin: 0;
             padding: 0;
@@ -604,33 +604,33 @@
         //  FIREBASE CONFIG – REPLACE WITH YOUR OWN
         // ============================================================
         const firebaseConfig = {
-          apiKey: "AIzaSyB6sHNLOVLT4vlBh93VFNEWqOe21XuMvTg",
-          authDomain: "timer-47497.firebaseapp.com",
-          databaseURL: "https://timer-47497-default-rtdb.firebaseio.com",
-          projectId: "timer-47497",
-          storageBucket: "timer-47497.firebasestorage.app",
-          messagingSenderId: "745059565421",
-          appId: "1:745059565421:web:0c893aec7c73bdcef9a464",
-          measurementId: "G-KL3T9ZQ1J4"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const timerRef = db.ref('countdown');
+        const clientId = Math.random().toString(36).substring(2, 10); // unique per device/tab
 
         // ============================================================
-        //  COUNTDOWN ENGINE (with Firebase sync)
+        //  COUNTDOWN ENGINE (with robust sync)
         // ============================================================
 
-        class Stopwatch {
+        class CountdownTimer {
             constructor() {
-                // Local state
+                // State
                 this.remaining = 0; // ms
                 this.initialRemaining = 0; // ms
                 this.running = false;
                 this.intervalId = null;
-                this.startTime = 0;
-                this.syncPending = false; // prevent echo loops
+                this.startTime = 0; // performance.now() when started locally
+                this.localUpdate = false; // prevent echo
 
                 // DOM refs
                 this.hEl = document.getElementById('h');
@@ -662,20 +662,22 @@
                 this.completionView = document.getElementById('completionView');
                 this.completionCtrl = document.getElementById('completionCtrl');
 
-                // Bind
+                // Bind methods
                 this.updateDisplay = this.updateDisplay.bind(this);
                 this.tick = this.tick.bind(this);
                 this.updateTimeAndCompletion = this.updateTimeAndCompletion.bind(this);
                 this.syncToFirebase = this.syncToFirebase.bind(this);
-                this.handleRemoteUpdate = this.handleRemoteUpdate.bind(this);
+                this.applyRemoteState = this.applyRemoteState.bind(this);
 
-                // Load initial state from Firebase
+                // Load initial state
                 this.loadFromFirebase();
 
                 // Listen for remote changes
                 timerRef.on('value', (snapshot) => {
                     const data = snapshot.val();
-                    if (data) this.handleRemoteUpdate(data);
+                    if (data && !this.localUpdate) {
+                        this.applyRemoteState(data);
+                    }
                 });
 
                 // UI events
@@ -702,9 +704,9 @@
                 timerRef.once('value').then((snapshot) => {
                     const data = snapshot.val();
                     if (data) {
-                        this.handleRemoteUpdate(data);
+                        this.applyRemoteState(data);
                     } else {
-                        // No data yet, set default target (5 min)
+                        // No data → set default 5 minutes
                         this.setTarget(0, 5);
                     }
                 }).catch(err => {
@@ -713,51 +715,59 @@
                 });
             }
 
-            handleRemoteUpdate(data) {
-                // Avoid echo from our own updates
-                if (this.syncPending) return;
+            applyRemoteState(data) {
+                // Ignore if it's our own update (we set localUpdate = true before writing)
+                if (data.clientId === clientId) return;
+
+                // Stop local timer if running
+                if (this.running) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                    this.running = false;
+                }
 
                 const remoteRemaining = data.remaining || 0;
-                const remoteRunning = data.running || false;
                 const remoteInitial = data.initialRemaining || 0;
-                const remoteTimestamp = data.updatedAt || 0;
+                const remoteRunning = data.running || false;
+                const remoteLastUpdated = data.lastUpdated || 0;
 
-                // If the remote data is newer than our local, apply it
-                // We'll use a simple approach: always trust remote if we're not the one who updated.
-                // But we want to avoid overriding a local change that hasn't been synced yet.
-                // We'll use a lastUpdated timestamp stored in the object.
-                // If the remote timestamp is newer, we accept it.
-                // For simplicity, we'll just apply if we're not in the middle of a local action.
-                if (!this.syncPending) {
-                    this.remaining = remoteRemaining;
-                    this.initialRemaining = remoteInitial;
-                    if (remoteRunning !== this.running) {
-                        if (remoteRunning) {
-                            this.start();
-                        } else {
-                            this.pause();
-                        }
-                    } else {
-                        this.updateDisplay();
-                        this.updateUIState();
-                        this.updateTimeAndCompletion();
-                    }
+                // Compute elapsed time since the remote snapshot
+                // Use client's Date.now() - remoteLastUpdated (approximate)
+                const now = Date.now();
+                const elapsed = now - remoteLastUpdated;
+                let newRemaining = Math.max(0, remoteRemaining - elapsed);
+
+                // If remoteRunning is true, we need to start the timer with this newRemaining
+                this.remaining = newRemaining;
+                this.initialRemaining = remoteInitial;
+
+                if (remoteRunning && newRemaining > 0) {
+                    this.running = true;
+                    this.startTime = performance.now() - (this.initialRemaining - this.remaining);
+                    this.intervalId = setInterval(this.tick, 20);
+                } else {
+                    this.running = false;
                 }
+
+                this.updateDisplay();
+                this.updateUIState();
+                this.updateTimeAndCompletion();
             }
 
             syncToFirebase() {
-                this.syncPending = true;
+                this.localUpdate = true;
                 const data = {
                     remaining: this.remaining,
                     initialRemaining: this.initialRemaining,
                     running: this.running,
-                    updatedAt: firebase.database.ServerValue.TIMESTAMP
+                    lastUpdated: firebase.database.ServerValue.TIMESTAMP,
+                    clientId: clientId
                 };
                 timerRef.update(data).then(() => {
-                    this.syncPending = false;
+                    this.localUpdate = false;
                 }).catch(err => {
                     console.warn("Firebase sync failed", err);
-                    this.syncPending = false;
+                    this.localUpdate = false;
                 });
             }
 
@@ -766,7 +776,7 @@
                 const totalMs = (hours * 3600 + minutes * 60) * 1000;
                 this.initialRemaining = totalMs;
                 this.remaining = totalMs;
-                this.pause();
+                this.pause(); // stop if running
                 this.updateDisplay();
                 this.updateTimeAndCompletion();
                 this.updateUIState();
@@ -779,8 +789,7 @@
                 if (this.remaining <= 0) return;
                 if (this.running) return;
                 this.running = true;
-                this.startTime = performance.now();
-                this.initialRemaining = this.remaining;
+                this.startTime = performance.now() - (this.initialRemaining - this.remaining);
                 this.intervalId = setInterval(this.tick, 20);
                 this.updateUIState();
                 this.syncToFirebase();
@@ -791,6 +800,7 @@
                     this.running = false;
                     clearInterval(this.intervalId);
                     this.intervalId = null;
+                    // Recalculate remaining precisely
                     const elapsed = performance.now() - this.startTime;
                     this.remaining = Math.max(0, this.initialRemaining - elapsed);
                     this.updateDisplay();
@@ -820,8 +830,7 @@
                 this.remaining += ms;
                 this.initialRemaining += ms;
                 if (this.running) {
-                    this.startTime = performance.now();
-                    this.initialRemaining = this.remaining;
+                    this.startTime = performance.now() - (this.initialRemaining - this.remaining);
                 }
                 this.updateDisplay();
                 this.updateTimeAndCompletion();
@@ -844,8 +853,8 @@
                 }
                 this.updateDisplay();
                 this.updateTimeAndCompletion();
-                // Sync to Firebase every second (throttle)
-                if (Math.floor(Date.now() / 1000) % 2 === 0) {
+                // Throttle Firebase sync to every 2 seconds to reduce writes
+                if (Math.floor(Date.now() / 2000) % 2 === 0) {
                     this.syncToFirebase();
                 }
             }
@@ -992,7 +1001,7 @@
         // ============================================================
         //  INIT
         // ============================================================
-        const stopwatch = new Stopwatch();
+        const stopwatch = new CountdownTimer();
 
         window.addEventListener('beforeunload', () => {
             if (stopwatch.intervalId) clearInterval(stopwatch.intervalId);
